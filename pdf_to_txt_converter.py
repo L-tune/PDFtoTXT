@@ -7,6 +7,14 @@ import traceback
 from tkinter import font
 import tkinter as tk
 from PIL import Image
+import sys
+
+def get_resource_path(relative_path):
+    """Получаем путь к ресурсу, работающий как в разработке, так и в собранном приложении"""
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller создает временную папку и хранит путь в _MEIPASS
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
 class PDFConverter:
     def __init__(self):
@@ -53,7 +61,7 @@ class PDFConverter:
         
         # Загружаем логотип
         try:
-            logo_path = os.path.join(os.path.dirname(__file__), 'src', 'logo', 'logo_rgb_black.png')
+            logo_path = get_resource_path(os.path.join('src', 'logo', 'logo_rgb_black.png'))
             if os.path.exists(logo_path):
                 # Загружаем PNG
                 pil_image = Image.open(logo_path)
@@ -68,7 +76,7 @@ class PDFConverter:
                 )
                 logo_label.pack(side="left", padx=(0, 20))
             else:
-                raise FileNotFoundError("Logo file not found")
+                raise FileNotFoundError(f"Logo file not found at {logo_path}")
         except Exception as e:
             print(f"Error loading logo: {str(e)}")
             # Если не удалось загрузить логотип, используем текстовую метку
@@ -116,13 +124,13 @@ class PDFConverter:
         stats_left = ctk.CTkFrame(stats_frame, fg_color="transparent")
         stats_left.pack(side="left", padx=20, pady=20)
         
-        converted_count = ctk.CTkLabel(
+        self.converted_count = ctk.CTkLabel(
             stats_left,
             text="0",
             font=ctk.CTkFont(family=self.fonts['stats'][0], size=self.fonts['stats'][1]),
             text_color=self.colors['text_primary']
         )
-        converted_count.pack(anchor="w")
+        self.converted_count.pack(anchor="w")
         
         converted_label = ctk.CTkLabel(
             stats_left,
@@ -193,7 +201,7 @@ class PDFConverter:
     def load_custom_fonts(self):
         """Загрузка кастомных шрифтов"""
         try:
-            fonts_path = os.path.join(os.path.dirname(__file__), 'src', 'fonts')
+            fonts_path = get_resource_path(os.path.join('src', 'fonts'))
             
             # Регистрируем шрифты
             font_files = {
@@ -283,6 +291,7 @@ class PDFConverter:
                         txt_file.write(text)
                     
                     converted_files += 1
+                    self.converted_count.configure(text=str(converted_files))
                     self.files_textbox.insert("end", f"✓ {pdf_path.name}\n")
                 except Exception as e:
                     self.files_textbox.insert("end", f"✗ {pdf_path.name} - Error: {str(e)}\n")
